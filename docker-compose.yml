@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  nodeauth_rest_api:
+    image: "node:20.9.0"
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "30001:30001"
+    command: sh -c "npm install && npm install -g nodemon && nodemon --legacy-watch /app/index.js"
+  nodeauth_mongodb:
+    image: "mongo:7.0.2"
+    volumes:
+      - nodeauth-mongodb:/data/db
+    ports:
+      - "27017:27017"
+    command: "--bind_ip=0.0.0.0 --replSet=rs1"
+
+volumes:
+  nodeauth-mongodb:
