@@ -1,0 +1,380 @@
+openapi: 3.0.1
+info:
+  title: Nodejs JWT Authentication (user/pass, google, facebook)
+  description: "For this API, you need `Jwt` token in `Authorization` header, for authorization purposes. Example: `Authorization: Bearer <token>`"
+  contact:
+    email: team.custom.branex@nanosofttek.com
+  version: 1.0.0
+servers:
+  - url: "http://localhost:30001"
+    description: Development Server
+
+tags:
+  - name: User
+    description: "Operations about user"
+  - name: Token
+
+paths:  
+  /auth/token:
+    post:
+      tags:
+        - Token
+      summary: "To obtain a {access_token, refresh_token} pair for accessing the API"
+      operationId: /auth/token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessToken"
+        "400":
+          description: Invalid username or password
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+  /auth/token/refresh:
+    post:
+      tags:
+        - Token
+      summary: To refresh an expired (or not) access_token
+      operationId: /auth/token/refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRefreshRequest"
+        required: true
+      security:
+        - bearerAuth: []  
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessToken"
+        "400":
+          description: Invalid refresh_token
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+  /auth/forgotpwd:
+    post:
+      tags:
+        - Token
+      summary: To request a forgotten password
+      operationId: /auth/forgotpwd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Could not generate forgot password token.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+  /auth/email/verify:
+    post:
+      tags:
+        - Token
+      summary: To verify email if token available
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string                  
+                email:
+                  type: string                    
+              required:
+                - "token"
+                - "email"                
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Could not generate forgot password token.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+      security:
+        - bearerAuth: []
+    get:
+      tags:
+        - Token
+      summary: To request a verify email link
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Could not generate forgot password token.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+      security:
+        - bearerAuth: []
+  /auth/forgotpwd/link:
+    get:
+      tags:
+        - Token
+      summary: To check forgot password link
+      operationId: /auth/forgotpwd/link
+      parameters:
+        - in: query
+          name: forgot_pwd_token
+          required: true
+          schema:
+            type : string 
+      responses:
+        "200":
+          description: OK          
+        "400":
+          description: Could not generate forgot password token.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+  /auth/forgotpwd/email:
+    get:
+      tags:
+        - Token
+      summary: To check forgot password link
+      operationId: /auth/forgotpwd/email
+      parameters:
+        - in: query
+          name: forgot_pwd_token
+          required: true
+          schema:
+            type : string
+        - in: query
+          name: email
+          required: true
+          schema:
+            type : string 
+      responses:
+        "200":
+          description: OK          
+        "400":
+          description: Could not generate forgot password token.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+  /auth/forgotpwd/reset:
+    post:
+      tags:
+        - Token
+      summary: To reset a forgotten password
+      operationId: /auth/forgotpwd/reset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetForgotPasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Could not change password.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+  /auth/password/reset:
+    put:
+      tags:
+        - Token
+      summary: To reset user's password
+      operationId: /auth/password/reset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Could not change password.
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+      security:
+        - bearerAuth: []
+  /auth/logout:
+    post:
+      tags:
+        - Token
+      summary: "To logout from device"
+      operationId: /auth/logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content: {}
+        "400":
+          description: Invalid username or password
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:        
+    LoginRequest:
+      required:
+        - email
+        - password
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        device_type:
+          type: string
+        device_token:
+          type: string
+    ResetPasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+        confirm_password:
+          type: string     
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+    ForgotPasswordLink:
+      type: object
+      properties:
+        forgot_pwd_token:
+          type: string
+    ResetForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        forgot_pwd_token:
+          type: string
+          minLength: 36
+          maxLength: 36
+        new_password:
+          type: string
+        confirm_new_password:
+          type: string
+    LogoutRequest:
+      required:
+        - refresh_token
+        - device_token
+      type: object
+      properties:
+        refresh_token:
+          type: string
+        device_token:
+          type: string
+    UserProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_code:
+          type: string
+        phone_slug:
+          type: string
+        phone_no:
+          type: string
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string          
+    AccessToken:
+      required:
+        - access_token
+        - refresh_token
+        - ttl
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        ttl:
+          type: integer
+          format: int64
+          description: Time in seconds for access_token expiry.
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+       
