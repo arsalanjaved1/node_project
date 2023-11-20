@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const tokenService = require('./token.service');
-const tokenSchema = require('./token.schemas');
+const tokenSchemas = require('./token.schemas');
 
 // routes
 
@@ -14,10 +14,36 @@ router.put('/password', changeKnownPassword);
 router.post('/forgotpwd', requestForgotPasswordToken);
 router.post('/forgotpwd/reset', setNewPasswordAfterForgetting);
 
-module.exports = router;
+module.exports = router; 
 
 async function getNewAccessTokenPairAgainstUsernamePassword(req, res, next) {
-    throw Error("Method not implemented");
+    const {error, value} = tokenSchemas.loginRequestSchema.validate(req.body);
+
+    if (!error) {
+        try {
+            var result = await tokenService.authenticate(value.email, value.password);
+
+            if (result.hasOwnProperty("error")) {
+                return res.status(400).json(result);
+            }
+            else {
+                return res.json(result);
+            }
+        }
+        catch(e) {
+            console.log(e);
+
+            if (err.name === 'MongoError') {
+                return res.status(503).json({ 
+                    error: 'Service unavailabe. Please try again.' 
+                });
+            }
+        }
+    }
+    else {
+        return res.status(400).json({error: error.message});
+    }
+
     next();
 }
 
