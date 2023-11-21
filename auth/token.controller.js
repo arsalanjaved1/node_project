@@ -5,7 +5,7 @@ const tokenSchemas = require('./token.schemas');
 
 // routes
 
-router.post('/token', getNewAccessTokenPairAgainstUsernamePassword);
+router.post('/token', createAccessTokenPair);
 router.post('/token/exchange/google', exchangeGoogleIdTokenForAccessTokenPair);
 router.post('/token/exchange/facebook', exchangeFacebookTokenForAccessTokenPair);
 router.post('/token/refresh', refreshAccessTokenPair);
@@ -16,68 +16,59 @@ router.post('/forgotpwd/reset', setNewPasswordAfterForgetting);
 
 module.exports = router; 
 
-async function getNewAccessTokenPairAgainstUsernamePassword(req, res, next) {
-    const {error, value} = tokenSchemas.loginRequestSchema.validate(req.body);
+async function createAccessTokenPair(req, res) {
+    const { error, value } = tokenSchemas.loginRequestSchema.validate(req.body);
 
     if (!error) {
-        try {
-            var result = await tokenService.authenticate(value.email, value.password);
+        let result = await tokenService.authenticate(value.email, value.password);
 
-            if (result.hasOwnProperty("error")) {
-                return res.status(400).json(result);
-            }
-            else {
-                return res.json(result);
-            }
+        if (result.hasOwnProperty("error")) {
+            return res.status(400).json(result);
         }
-        catch(e) {
-            console.log(e);
 
-            if (err.name === 'MongoError') {
-                return res.status(503).json({ 
-                    error: 'Service unavailabe. Please try again.' 
-                });
-            }
-        }
-    }
-    else {
-        return res.status(400).json({error: error.message});
+        return res.status(201).json(result);
     }
 
-    next();
+    return res.status(400)
+        .json
+        (
+            {
+                error: error.message
+            }
+        );
 }
 
-async function exchangeGoogleIdTokenForAccessTokenPair(req, res, next) {
+async function exchangeGoogleIdTokenForAccessTokenPair(req, res) {
     throw Error("Method not implemented");
     next();
 }
 
-async function exchangeFacebookTokenForAccessTokenPair(req, res, next) {
+async function exchangeFacebookTokenForAccessTokenPair(req, res) {
     throw Error("Method not implemented");
     next();
 }
 
-async function refreshAccessTokenPair(req, res, next) {
+async function refreshAccessTokenPair(req, res) {
     throw Error("Method not implemented");
     next();
 }
 
-async function revokeAccessTokenPair(req, res, next) {
+async function revokeAccessTokenPair(req, res) {
     throw Error("Method not implemented");
     next();
 }
 
-async function changeKnownPassword(req, res, next) {
+async function changeKnownPassword(req, res) {
     throw Error("Method not implemented");
     next();
 }
 
-async function requestForgotPasswordToken(req, res, next) {
+async function requestForgotPasswordToken(req, res) {
     throw Error("Method not implemented");
     next();
 }
 
-async function setNewPasswordAfterForgetting(req, res, next) {
+async function setNewPasswordAfterForgetting(req, res) {
     throw Error("Method not implemented");
     next();
 }

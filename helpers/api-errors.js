@@ -7,6 +7,10 @@ const codeToErrorMap = {
     '10-02' : {        
         real_error : "Passwords did not match.",
         friendly_error : "Either the username or the password is incorrect."
+    },
+    '10-03' : {        
+        real_error : "There was a problem inserting the refresh_token in the database.",
+        friendly_error : "Something went wrong."
     }
 }
 

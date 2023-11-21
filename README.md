@@ -19,3 +19,8 @@ A sample with Nodejs REST API Authentication using different authentication sche
 - Please create a separate branch with your work / fixes / additions
 - Make a **Pull Request** to merge with **master**
 - **Nobody** is allowed to **push** changes to **master** directly
+
+## For testing
+
+- `docker run --name node-auth-test -it --network nodeauth_default  -p 30001:30001 -w /app -v  "/e/node_mobile_auth/nodeauth:/app" node:20.9.0 sh -c "npm install && npm test"`
+- Substitute `/e/node_mobile_auth/nodeauth` with your own Filesystem project path

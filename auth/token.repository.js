@@ -3,7 +3,8 @@ const errorHelper = require('../helpers/api-errors');
 const db_name = process.env.DB_NAME;
 
 module.exports = {
-    findUserByEmail
+    findUserByEmail,
+    insertRefreshToken
 }
 
 async function findUserByEmail(email) {
@@ -24,4 +25,19 @@ async function findUserByEmail(email) {
     return {
         user : user
     };
+}
+
+async function insertRefreshToken(userEmail, refreshToken) {   
+
+    let insertResult = await client.db(db_name)
+        .collection('refresh_tokens')
+        .insertOne
+        (
+            {
+                email: userEmail,
+                refresh_token: refreshToken
+            }
+        );
+    
+    return insertResult.acknowledged;
 }

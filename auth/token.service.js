@@ -15,7 +15,7 @@ async function authenticate(email, password) {
     let { user, error } = await tokenRepository.findUserByEmail(email);
 
     if (error) {
-        return error;
+        return { error };
     }
 
     if (!await bcrypt.compare(password, user.password)) {
@@ -23,8 +23,12 @@ async function authenticate(email, password) {
     }
 
     let accessRefreshPair =  _generateAccessTokenPair(user);
-    //RESUME HERE
 
+    if (!await tokenRepository.insertRefreshToken(email, accessRefreshPair.refresh_token)) {
+        return errorHelper.getErrorByCode('10-03');
+    }
+
+    return accessRefreshPair;
 }
 
 //TODO: FIX TTL
@@ -36,7 +40,7 @@ function _generateAccessTokenPair(user) {
 
     return {
         access_token: accessToken,
-        refreshToken: refreshToken,
+        refresh_token: refreshToken,
         ttl: 3600
     };
 }
