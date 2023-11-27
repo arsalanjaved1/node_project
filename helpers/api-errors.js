@@ -11,6 +11,10 @@ const codeToErrorMap = {
     '10-03' : {        
         real_error : "There was a problem inserting the refresh_token in the database.",
         friendly_error : "Something went wrong."
+    },
+    '10-04' : {        
+        real_error : "Could not find refresh token in the database.",
+        friendly_error : "Please re-authenticate."
     }
 }
 

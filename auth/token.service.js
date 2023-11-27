@@ -7,7 +7,8 @@ const errorHelper = require('../helpers/api-errors');
 //const emailHelper = require('../helpers/email');
 
 module.exports = {
-    authenticate
+    authenticate,
+    refreshAccessTokenPair
 };
 
 async function authenticate(email, password) {
@@ -22,9 +23,26 @@ async function authenticate(email, password) {
         return errorHelper.getErrorByCode('10-02');
     }
 
-    let accessRefreshPair =  _generateAccessTokenPair(user);
+    let accessRefreshPair =  _generateAccessTokenPair(user._id);
 
-    if (!await tokenRepository.insertRefreshToken(email, accessRefreshPair.refresh_token)) {
+    if (!await tokenRepository.insertRefreshToken(user._id, accessRefreshPair.refresh_token)) {
+        return errorHelper.getErrorByCode('10-03');
+    }
+
+    return accessRefreshPair;
+}
+
+async function refreshAccessTokenPair(refreshToken) {
+
+    let { error, refreshTokenRecord } = await tokenRepository.refreshTokenExists(refreshToken);
+    
+    if (error) {
+        return { error };
+    }
+
+    let accessRefreshPair =  _generateAccessTokenPair(refreshTokenRecord.user);
+    
+    if (! await tokenRepository.deleteOldAndInsertNewRefreshToken(refreshTokenRecord.user, refreshToken, accessRefreshPair.refresh_token)) {
         return errorHelper.getErrorByCode('10-03');
     }
 
@@ -32,10 +50,9 @@ async function authenticate(email, password) {
 }
 
 //TODO: FIX TTL
-function _generateAccessTokenPair(user) {
-    let { password, ...userWithoutPassword } = user;
+function _generateAccessTokenPair(userId) {    
 
-    const accessToken = _generateJWTToken(userWithoutPassword);
+    const accessToken = _generateJWTToken(userId);
     const refreshToken = _generateRefreshToken();
 
     return {
@@ -49,10 +66,10 @@ function _generateRefreshToken() {
     return uuidv4();
 }
 
-function _generateJWTToken(userWithoutPassword) {
+function _generateJWTToken(userId) {
     return jwt.sign(
         {
-            user: userWithoutPassword._id
+            user: userId
         },
         process.env.JWT_SECRET
     );

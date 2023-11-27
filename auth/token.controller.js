@@ -49,8 +49,25 @@ async function exchangeFacebookTokenForAccessTokenPair(req, res) {
 }
 
 async function refreshAccessTokenPair(req, res) {
-    throw Error("Method not implemented");
-    next();
+    const { error, value } = tokenSchemas.refreshAccessTokenRequest.validate(req.body);
+
+    if (!error) {
+        let result = await tokenService.refreshAccessTokenPair(value.refresh_token);
+
+        if (!result.hasOwnProperty("error")) {
+            return res.status(200).json(result);            
+        }
+
+        return res.status(400).json(result);        
+    }
+
+    return res.status(400)
+        .json
+        (
+            {
+                error: error.message
+            }
+        );
 }
 
 async function revokeAccessTokenPair(req, res) {

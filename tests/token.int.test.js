@@ -76,4 +76,25 @@ describe('Authentication using username and password', () => {
                     }
                 )
     });
+
+    it('provides new <access_token, refresh_token> pair with expiry against correct <refresh_token>.', async () => {
+
+        let data = {
+            refresh_token: '65219a1c-a3ba-4d5f-bbf9-1c2ebedb2821'
+        };
+
+        const response = await request(app)
+            .post("/auth/token/refresh")
+            .set("content-type", "application/json")
+            .send(data);
+
+        console.log(response.body);
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("access_token");
+        expect(response.body).toHaveProperty("refresh_token");
+        expect(response.body).toHaveProperty("ttl");
+
+    });
+    
 });
+
