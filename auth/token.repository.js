@@ -7,7 +7,8 @@ module.exports = {
     insertRefreshToken,
     deleteRefreshToken,
     refreshTokenExists,
-    deleteOldAndInsertNewRefreshToken
+    deleteOldAndInsertNewRefreshToken,
+    insertRevokedToken
 }
 
 async function findUserByEmail(email) {
@@ -119,4 +120,21 @@ async function refreshTokenExists(refreshToken) {
     return {
         refreshTokenRecord : record
     };
+}
+
+async function insertRevokedToken(token) {
+    let insertResult = await client.db(db_name)
+        .collection('revoked_tokens')
+        .insertOne
+        (
+            {
+                _id : token,   
+                t : new Date()
+            },
+            {
+                ... queryOptions
+            }
+        );
+    
+    return insertResult.acknowledged;
 }

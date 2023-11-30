@@ -8,7 +8,8 @@ const errorHelper = require('../helpers/api-errors');
 
 module.exports = {
     authenticate,
-    refreshAccessTokenPair
+    refreshAccessTokenPair,
+    revokeTokenPair
 };
 
 async function authenticate(email, password) {
@@ -47,6 +48,24 @@ async function refreshAccessTokenPair(refreshToken) {
     }
 
     return accessRefreshPair;
+}
+
+async function revokeTokenPair(jwtTokenHeader) {
+
+    let jwtToken = getJwtTokenFromHeader(jwtTokenHeader);    
+    let result = await tokenRepository.insertRevokedToken(jwtToken);
+
+    if (!result) {
+        return errorHelper.getErrorByCode('10-05');
+    }
+
+    return {
+        message : "You have been logged out."
+    }
+}
+
+function getJwtTokenFromHeader(authHeader) {
+    return authHeader.split(" ")[1];
 }
 
 //TODO: FIX TTL

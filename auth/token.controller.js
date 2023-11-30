@@ -71,21 +71,24 @@ async function refreshAccessTokenPair(req, res) {
 }
 
 async function revokeAccessTokenPair(req, res) {
-    throw Error("Method not implemented");
-    next();
+    let result = await tokenService.revokeTokenPair(request.headers.authorization);
+
+    if (!result.hasOwnProperty("error")) {
+        return res.status(200).json(result);
+    }
+
+    return res.status(400).json(result);
 }
 
 async function changeKnownPassword(req, res) {
-    throw Error("Method not implemented");
-    next();
+    throw Error("Method not implemented");    
 }
 
 async function requestForgotPasswordToken(req, res) {
-    throw Error("Method not implemented");
-    next();
+    throw Error("Method not implemented");    
 }
 
 async function setNewPasswordAfterForgetting(req, res) {
-    throw Error("Method not implemented");
-    next();
+    throw Error("Method not implemented");    
 }
+
