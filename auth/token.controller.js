@@ -71,7 +71,7 @@ async function refreshAccessTokenPair(req, res) {
 }
 
 async function revokeAccessTokenPair(req, res) {
-    let result = await tokenService.revokeTokenPair(request.headers.authorization);
+    let result = await tokenService.revokeTokenPair(req.headers.authorization);
 
     if (!result.hasOwnProperty("error")) {
         return res.status(200).json(result);

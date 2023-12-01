@@ -8,7 +8,8 @@ module.exports = {
     deleteRefreshToken,
     refreshTokenExists,
     deleteOldAndInsertNewRefreshToken,
-    insertRevokedToken
+    insertRevokedToken,
+    insertRevokedTokenAndDeleteOldRefreshToken
 }
 
 async function findUserByEmail(email) {
@@ -31,7 +32,7 @@ async function findUserByEmail(email) {
     };
 }
 
-async function insertRefreshToken(userId, refreshToken, queryOptions = {}) {   
+async function insertRefreshToken(userId, accessRefreshPair, queryOptions = {}) {   
 
     let insertResult = await client.db(db_name)
         .collection('refresh_tokens')
@@ -39,7 +40,8 @@ async function insertRefreshToken(userId, refreshToken, queryOptions = {}) {
         (
             {
                 user: userId,
-                refresh_token: refreshToken,
+                access_token: accessRefreshPair.access_token,
+                refresh_token: accessRefreshPair.refresh_token,
                 t : new Date()
             },
             {
@@ -67,7 +69,24 @@ async function deleteRefreshToken(refreshToken, queryOptions = {}) {
     return deleteResult.acknowledged;
 }
 
-async function deleteOldAndInsertNewRefreshToken(userId, oldRefreshToken, newRefreshToken) {
+async function deleteRefreshTokenByJwt(jwtToken, queryOptions = {}) {
+
+    let deleteResult = await client.db(db_name)
+        .collection('refresh_tokens')
+        .deleteOne
+        (
+            {
+                access_token: jwtToken
+            },
+            {
+                ...queryOptions
+            }
+        );
+
+    return deleteResult.acknowledged;
+}
+
+async function deleteOldAndInsertNewRefreshToken(userId, oldRefreshToken, accessRefreshPair) {
     
     let result;
     const transactionOptions = {
@@ -82,7 +101,7 @@ async function deleteOldAndInsertNewRefreshToken(userId, oldRefreshToken, newRef
         session.startTransaction(transactionOptions);
 
         result = await deleteRefreshToken(oldRefreshToken, { session })
-            && await insertRefreshToken(userId, newRefreshToken, { session });
+            && await insertRefreshToken(userId, accessRefreshPair, { session });
 
         if (result === false) {
             throw new Error("The transaction did not achieve desired results.");
@@ -92,8 +111,9 @@ async function deleteOldAndInsertNewRefreshToken(userId, oldRefreshToken, newRef
         result = true;
     }
     catch(err) {
+        result = false;
         console.log(err);
-        await session.abortTransaction();        
+        await session.abortTransaction();                
     }
     finally {
         await session.endSession();
@@ -122,7 +142,7 @@ async function refreshTokenExists(refreshToken) {
     };
 }
 
-async function insertRevokedToken(token) {
+async function insertRevokedToken(token, queryOptions = {}) {
     let insertResult = await client.db(db_name)
         .collection('revoked_tokens')
         .insertOne
@@ -137,4 +157,40 @@ async function insertRevokedToken(token) {
         );
     
     return insertResult.acknowledged;
+}
+
+async function insertRevokedTokenAndDeleteOldRefreshToken(jwtToken) {
+
+    let result;
+    const transactionOptions = {
+        readConcern: { level: 'snapshot' },
+        writeConcern: { w: 'majority' },
+        readPreference: 'primary'
+    };
+
+    const session = client.startSession();
+
+    try {
+        session.startTransaction(transactionOptions);
+
+        result = await insertRevokedToken(jwtToken, { session })
+            && await deleteRefreshTokenByJwt(jwtToken, { session });
+
+        if (result === false) {
+            throw new Error("The transaction did not achieve desired results.");
+        }   
+
+        await session.commitTransaction();
+        result = true;
+    }
+    catch (err) {
+        result = false;
+        console.log(err);        
+        await session.abortTransaction();
+    }
+    finally {
+        await session.endSession();
+    }
+
+    return result;
 }

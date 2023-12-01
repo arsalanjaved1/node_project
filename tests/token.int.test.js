@@ -84,11 +84,15 @@ describe('Authentication using username and password', () => {
 describe('Refresh Tokens', () => {
 
     beforeAll(() => {
-        return dbTestHelper.initializeDBForRefreshTokens();
+        return dbTestHelper.initializeDBForRefreshTokens().then(()=> {
+            console.log("Refresh tokens cleared.")
+        });
     });
 
     afterAll(() => {
-        return dbTestHelper.initializeDBForRefreshTokens();
+        return dbTestHelper.initializeDBForRefreshTokens().then(()=> {
+            console.log("Refresh tokens cleared.")
+        });
     });
 
     it('throws validation error for wrong data type in refresh_token', async () => {
@@ -196,4 +200,111 @@ describe('Refresh Tokens', () => {
                     }
                 )
     });
+});
+
+
+describe('Revoked Tokens', () => {
+
+    beforeEach(() => {
+        return Promise.all(dbTestHelper.initializeDBForRevokedTokens()).then(()=> {
+            console.log("Revoked tokens DB prepared.")
+        });
+    });
+
+    afterEach(() => {        
+        return Promise.all(dbTestHelper.initializeDBForRevokedTokens()).then(()=> {
+            console.log("Revoked tokens DB cleaned.")
+        });
+    });
+
+    it('Successfully marks a valid access_token as revoked.', async () => {
+        
+        //Arrange        
+        let data = {
+            email: "mohsin.nanosoft@gmail.com",
+            password: "hashedPassword"
+        };
+
+        const accessTokenPairRequest = await request(app)
+            .post("/auth/token")
+            .set("content-type", "application/json")
+            .send(data);
+
+        console.log(accessTokenPairRequest.body);
+
+        //Act
+        const response = await request(app)
+            .post("/auth/token/revoke")
+            .set("content-type", "application/json")
+            .auth(accessTokenPairRequest.body.access_token, { type: 'bearer' })
+            .send();
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(200);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    message : "You have been logged out."
+                }
+            );     
+    });
+
+    it('Errors out on bogus/invalid/expired token', async () => {
+
+        //Arrange             
+
+        //Act
+        const response = await request(app)
+            .post("/auth/token/revoke")
+            .set("content-type", "application/json")
+            .auth("bogustokencompk", { type: 'bearer' })
+            .send();
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(401);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    message: "Invalid Token"
+                }
+            );              
+
+    });
+
+
+    it('Errors out while revoking an already revoked token', async () => {
+
+        //Arrange             
+        let data = {
+            email: "mohsin.nanosoft@gmail.com",
+            password: "hashedPassword"
+        };
+
+        const accessTokenPairRequest = await request(app)
+            .post("/auth/token")
+            .set("content-type", "application/json")
+            .send(data);
+
+        console.log(accessTokenPairRequest.body);
+
+        //Act
+        const response = await request(app)
+            .post("/auth/token/revoke")
+            .set("content-type", "application/json")
+            .auth("bogustokencompk", { type: 'bearer' })
+            .send();
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error");            
+    });
+
 });

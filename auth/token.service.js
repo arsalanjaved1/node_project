@@ -26,7 +26,7 @@ async function authenticate(email, password) {
 
     let accessRefreshPair =  _generateAccessTokenPair(user._id);
 
-    if (!await tokenRepository.insertRefreshToken(user._id, accessRefreshPair.refresh_token)) {
+    if (!await tokenRepository.insertRefreshToken(user._id, accessRefreshPair)) {
         return errorHelper.getErrorByCode('10-03');
     }
 
@@ -43,7 +43,7 @@ async function refreshAccessTokenPair(refreshToken) {
 
     let accessRefreshPair =  _generateAccessTokenPair(refreshTokenRecord.user);
     
-    if (! await tokenRepository.deleteOldAndInsertNewRefreshToken(refreshTokenRecord.user, refreshToken, accessRefreshPair.refresh_token)) {
+    if (! await tokenRepository.deleteOldAndInsertNewRefreshToken(refreshTokenRecord.user, refreshToken, accessRefreshPair)) {
         return errorHelper.getErrorByCode('10-03');
     }
 
@@ -53,7 +53,7 @@ async function refreshAccessTokenPair(refreshToken) {
 async function revokeTokenPair(jwtTokenHeader) {
 
     let jwtToken = getJwtTokenFromHeader(jwtTokenHeader);    
-    let result = await tokenRepository.insertRevokedToken(jwtToken);
+    let result = await tokenRepository.insertRevokedTokenAndDeleteOldRefreshToken(jwtToken);
 
     if (!result) {
         return errorHelper.getErrorByCode('10-05');
