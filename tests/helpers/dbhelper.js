@@ -6,7 +6,10 @@ module.exports = {
     initializeDBForRefreshTokens,
     initializeDBForRevokedTokens,
     insertRefreshTokenRecord,
-    deleteRefreshTokenRecordById
+    deleteRefreshTokenRecordById,
+    insertRevokedToken,
+    initializeDBForForgotPassword,
+    findForgotPwdRecordByEmail
 };
 
 function initializeDBForRefreshTokens() {
@@ -49,4 +52,33 @@ function clearRevokedTokens() {
     return client.db(db_name)
         .collection('revoked_tokens')
         .deleteMany({});
+}
+
+function insertRevokedToken(token) {
+    return client.db(db_name)
+        .collection('revoked_tokens')
+        .insertOne
+        (
+            {
+                _id: token,
+                t: new Date()
+            }
+        );
+}
+
+function initializeDBForForgotPassword() {
+    return client.db(db_name)
+        .collection('forgotpwd')
+        .deleteMany({});
+}
+
+function findForgotPwdRecordByEmail(email) {
+    return client.db(db_name)
+        .collection('forgotpwd')
+        .findOne
+            (
+                {
+                    email : email
+                }
+            );
 }

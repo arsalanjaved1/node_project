@@ -64,6 +64,7 @@ const resetPasswordRequestSchema = Joi.object({
 
 module.exports = {
     loginRequestSchema,
-    refreshAccessTokenRequest    
+    refreshAccessTokenRequest,
+    forgotPasswordRequestSchema
 }
 

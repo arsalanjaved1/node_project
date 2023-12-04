@@ -19,6 +19,10 @@ const codeToErrorMap = {
     '10-05' : {        
         real_error : "Could not insert revoked token in the database.",
         friendly_error : "Could not log out. Please try again."
+    },
+    '10-06' : {        
+        real_error : "Could not insert forgot password token in the database.",
+        friendly_error : "Unable to cater your request at the moment. Please try again."
     }
 }
 

@@ -39,13 +39,11 @@ async function createAccessTokenPair(req, res) {
 }
 
 async function exchangeGoogleIdTokenForAccessTokenPair(req, res) {
-    throw Error("Method not implemented");
-    next();
+    throw Error("Method not implemented");    
 }
 
 async function exchangeFacebookTokenForAccessTokenPair(req, res) {
-    throw Error("Method not implemented");
-    next();
+    throw Error("Method not implemented");    
 }
 
 async function refreshAccessTokenPair(req, res) {
@@ -85,7 +83,25 @@ async function changeKnownPassword(req, res) {
 }
 
 async function requestForgotPasswordToken(req, res) {
-    throw Error("Method not implemented");    
+    const { error, value } = tokenSchemas.forgotPasswordRequestSchema.validate(req.body);
+
+    if (!error) {
+        let result = await tokenService.generateForgotPasswordToken(value.email);
+
+        if (!result.hasOwnProperty("error")) {
+            return res.status(200).json(result);
+        }
+
+        return res.status(400).json(result);
+    }
+
+    return res.status(400)
+        .json
+        (
+            {
+                error: error.message
+            }
+        );
 }
 
 async function setNewPasswordAfterForgetting(req, res) {

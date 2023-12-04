@@ -202,7 +202,6 @@ describe('Refresh Tokens', () => {
     });
 });
 
-
 describe('Revoked Tokens', () => {
 
     beforeEach(() => {
@@ -252,6 +251,30 @@ describe('Revoked Tokens', () => {
             );     
     });
 
+    it('Errors out a revoke token request without authentication', async () => {
+
+        //Arrange             
+
+        //Act
+        const response = await request(app)
+            .post("/auth/token/revoke")
+            .set("content-type", "application/json")
+            .send();
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(401);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    message: "No authorization token was found"
+                }
+            );              
+
+    });
+
     it('Errors out on bogus/invalid/expired token', async () => {
 
         //Arrange             
@@ -277,7 +300,6 @@ describe('Revoked Tokens', () => {
 
     });
 
-
     it('Errors out while revoking an already revoked token', async () => {
 
         //Arrange             
@@ -293,18 +315,185 @@ describe('Revoked Tokens', () => {
 
         console.log(accessTokenPairRequest.body);
 
+        await dbTestHelper.insertRevokedToken(accessTokenPairRequest.body.access_token);
+
         //Act
         const response = await request(app)
             .post("/auth/token/revoke")
             .set("content-type", "application/json")
-            .auth("bogustokencompk", { type: 'bearer' })
+            .auth(accessTokenPairRequest.body.access_token, { type: 'bearer' })
             .send();
 
         console.log(response.body);
 
         //Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error");            
+        expect(response.body).toHaveProperty("error");
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    error: {
+                        code: '10-05',
+                        message: 'Could not log out. Please try again.'
+                    }
+                }
+            );
     });
 
+});
+
+describe('Forgot Password', () => {
+
+    beforeEach(() => {
+        return dbTestHelper.initializeDBForForgotPassword().then(()=> {
+            console.log("Forgot Password DB prepared.")
+        });
+    });
+
+    afterEach(() => {        
+        return dbTestHelper.initializeDBForForgotPassword().then(()=> {
+            console.log("Forgot Password DB prepared.")
+        });
+    });
+
+
+    it('throws validation error for a missing email field in the body', async () => {
+        //Arrange        
+
+        //Act
+        const response = await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")            
+            .send({
+                wrong_field : "abc@123.com"
+            });
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error");
+    });
+
+    it('throws validation error for a malformed email field in the body', async () => {
+        //Arrange        
+
+        //Act
+        const response = await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")            
+            .send({
+                email : "abc^>_123.com"
+            });
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error");
+    });
+
+    it('Should error out when requested by an unregistered user.', async () => {
+        //Arrange        
+
+        //Act
+        const response = await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")            
+            .send({
+                email : "abc@123.com"
+            });
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error");
+    });
+
+    it.todo('Should let a user with unverified email to be able to request forgot password.');
+    it.todo('Should let a user with verified email to be able to request forgot password.');
+
+    it('Should let a registered user request forgot password.', async () => {
+        //Arrange        
+
+        //Act
+        const response = await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")            
+            .send({
+                email : "mohsin.nanosoft@gmail.com"
+            });
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(200);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    message : "Password reset instructions have been sent to your registered email address."
+                }
+            );
+    });
+
+    it('Should let a user re-request forgot password.', async () => {
+        //Arrange        
+        await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")
+            .send({
+                email: "mohsin.nanosoft@gmail.com"
+            });
+
+        //Act
+        const response = await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")            
+            .send({
+                email : "mohsin.nanosoft@gmail.com"
+            });
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(200);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    message : "Password reset instructions have been sent to your registered email address."
+                }
+            );
+    });
+
+    it('Should replace the old forgot password request with a new one.', async () => {
+        //Arrange        
+        await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")
+            .send({
+                email: "mohsin.nanosoft@gmail.com"
+            });
+
+        let oldRequest = await dbTestHelper.findForgotPwdRecordByEmail("mohsin.nanosoft@gmail.com");
+        console.log(oldRequest);
+        //Act
+        const response = await request(app)
+            .post("/auth/forgotpwd")
+            .set("content-type", "application/json")            
+            .send({
+                email : "mohsin.nanosoft@gmail.com"
+            });
+
+        console.log(response.body);
+        
+        let newRequest = await dbTestHelper.findForgotPwdRecordByEmail("mohsin.nanosoft@gmail.com");
+        console.log(newRequest);
+        //Assert
+        expect(response.status).toBe(200);
+        expect(oldRequest).not.toEqual(newRequest);
+    });
 });

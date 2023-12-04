@@ -1,15 +1,15 @@
-const client = require('../helpers/database/mongodb');
-const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 const tokenRepository = require('./token.repository');
 const errorHelper = require('../helpers/api-errors');
+const { _generateAccessTokenPair, getJwtTokenFromHeader } = require('../helpers/token-helper');
 //const emailHelper = require('../helpers/email');
 
 module.exports = {
     authenticate,
     refreshAccessTokenPair,
-    revokeTokenPair
+    revokeTokenPair,
+    generateForgotPasswordToken
 };
 
 async function authenticate(email, password) {
@@ -64,33 +64,29 @@ async function revokeTokenPair(jwtTokenHeader) {
     }
 }
 
-function getJwtTokenFromHeader(authHeader) {
-    return authHeader.split(" ")[1];
-}
+async function generateForgotPasswordToken(email) {
 
-//TODO: FIX TTL
-function _generateAccessTokenPair(userId) {    
+    let { error } = await tokenRepository.findUserByEmail(email);
 
-    const accessToken = _generateJWTToken(userId);
-    const refreshToken = _generateRefreshToken();
+    if (error) {
+        return { error };
+    }
+
+    let forgotPwdToken = uuidv4();
+    let tokenHash = await bcrypt.hash(forgotPwdToken, await bcrypt.genSalt(10));
+
+    let recorded = await tokenRepository.upsertForgotPwdToken(email, tokenHash);
+
+    if (!recorded) {
+        return errorHelper.getErrorByCode('10-06');
+    }
+
+    //TODO: FIX IT
+    console.log(`Forgot password token for ${email} => ${forgotPwdToken}`);
 
     return {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        ttl: 3600
-    };
+        message : "Password reset instructions have been sent to your registered email address."
+    }
 }
 
-function _generateRefreshToken() {
-    return uuidv4();
-}
-
-function _generateJWTToken(userId) {
-    return jwt.sign(
-        {
-            user: userId
-        },
-        process.env.JWT_SECRET
-    );
-}
 

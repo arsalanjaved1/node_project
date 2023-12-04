@@ -9,7 +9,8 @@ module.exports = {
     refreshTokenExists,
     deleteOldAndInsertNewRefreshToken,
     insertRevokedToken,
-    insertRevokedTokenAndDeleteOldRefreshToken
+    insertRevokedTokenAndDeleteOldRefreshToken,
+    upsertForgotPwdToken
 }
 
 async function findUserByEmail(email) {
@@ -193,4 +194,23 @@ async function insertRevokedTokenAndDeleteOldRefreshToken(jwtToken) {
     }
 
     return result;
+}
+
+async function upsertForgotPwdToken(email, tokenHash) {
+    let result = await client.db(db_name).collection('forgotpwd').updateOne(
+        {
+            email: email
+        },
+        {
+            $set: {
+                token: tokenHash,
+                t : new Date()
+            }
+        },
+        {
+            upsert: true
+        }
+    );
+
+    return result.acknowledged;
 }
