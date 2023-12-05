@@ -23,6 +23,22 @@ const codeToErrorMap = {
     '10-06' : {        
         real_error : "Could not insert forgot password token in the database.",
         friendly_error : "Unable to cater your request at the moment. Please try again."
+    },
+    '10-07' : {        
+        real_error : "Could not find user in the database.",
+        friendly_error : "Could not find the user."
+    },
+    '10-08' : {        
+        real_error : "User requesting for password change is not the same user as mentioned in the request (FORBIDDEN).",
+        friendly_error : "Incorrect email address."
+    },
+    '10-09' : {        
+        real_error : "Could not update user's password in the database.",
+        friendly_error : "Could not change password. Please try again."
+    },
+    '10-10' : {        
+        real_error : "User's existing password is the same as the new one.",
+        friendly_error : "Please choose a different password than the new one."
     }
 }
 
@@ -32,6 +48,7 @@ function getErrorByCode(code) {
     }
 
     console.log(`[API ERROR] => ${code}`);
+    console.log(codeToErrorMap[code]);
 
     return {
         error : {

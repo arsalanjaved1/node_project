@@ -79,7 +79,33 @@ async function revokeAccessTokenPair(req, res) {
 }
 
 async function changeKnownPassword(req, res) {
-    throw Error("Method not implemented");    
+    const { error, value } = tokenSchemas.resetPasswordRequestSchema.validate(req.body);
+
+    if (error) {
+        return res.status(400)
+            .json
+            (
+                {
+                    error: error.message
+                }
+            );
+    }
+
+    let result = await tokenService.changePassword(req.auth.user, value);
+
+    if (result.hasOwnProperty("error")) {
+
+        if (result.error.code === '10-10') {
+            return res.status(400).json(result);
+        }
+        else if (result.error.code === '10-08') {
+            return res.status(403).json(result);
+        }
+        
+        throw new Error("Something went wrong. Please try again.");
+    }
+
+    return res.status(200).json(result);
 }
 
 async function requestForgotPasswordToken(req, res) {

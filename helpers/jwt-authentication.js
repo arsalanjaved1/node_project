@@ -19,8 +19,6 @@ function jwtAuthentication() {
                         '/auth/token',
                         '/auth/token/refresh',
                         '/auth/forgotpwd',
-                        '/auth/forgotpwd/link',
-                        '/auth/forgotpwd/email',
                         '/auth/forgotpwd/reset'
                     ]
             }

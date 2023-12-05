@@ -1,16 +1,19 @@
 const client = require('../helpers/database/mongodb');
 const errorHelper = require('../helpers/api-errors');
+const { ObjectId } = require('mongodb');
 const db_name = process.env.DB_NAME;
 
 module.exports = {
     findUserByEmail,
+    findUserById,
     insertRefreshToken,
     deleteRefreshToken,
     refreshTokenExists,
     deleteOldAndInsertNewRefreshToken,
     insertRevokedToken,
     insertRevokedTokenAndDeleteOldRefreshToken,
-    upsertForgotPwdToken
+    upsertForgotPwdToken,
+    updateUserPassword
 }
 
 async function findUserByEmail(email) {
@@ -26,6 +29,26 @@ async function findUserByEmail(email) {
     
     if (!user) {
         return errorHelper.getErrorByCode('10-01');
+    }
+
+    return {
+        user : user
+    };
+}
+
+async function findUserById(userId) {
+
+    let user = await client.db(db_name)
+        .collection('users')
+        .findOne
+        (
+            {
+                _id: new ObjectId(userId)
+            }
+        );
+    
+    if (!user) {
+        return errorHelper.getErrorByCode('10-07');
     }
 
     return {
@@ -209,6 +232,21 @@ async function upsertForgotPwdToken(email, tokenHash) {
         },
         {
             upsert: true
+        }
+    );
+
+    return result.acknowledged;
+}
+
+async function updateUserPassword(userId, newPasswordHash) {
+    let result = await client.db(db_name).collection('users').updateOne(
+        {
+            _id : userId
+        },
+        {
+            $set: {
+                password : newPasswordHash                
+            }
         }
     );
 

@@ -1,23 +1,40 @@
 const request = require("supertest");
 const app = require("../index");
 const dbTestHelper = require('./helpers/dbhelper');
+const testUtils = require('./helpers/utils');
 const { ObjectId } = require("mongodb");
 
 describe('Authentication using username and password', () => {
 
+    beforeEach(() => {
+        return Promise.all(dbTestHelper.clearDatabaseForAuth()).then(()=> {
+            console.log("Database prepared for Authentication tokens.")
+        });
+    });
+
+    afterEach(() => {        
+        return Promise.all(dbTestHelper.clearDatabaseForAuth()).then(()=> {
+            console.log("Database prepared for Authentication tokens.")
+        });
+    });
+
     it('provides access and refresh tokens with expiry against correct credentials.', async () => {
 
-        let data = {
-            email: "mohsin.nanosoft@gmail.com",
-            password: "hashedPassword"
-        };
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
 
+        //Act
         const response = await request(app)
             .post("/auth/token")
             .set("content-type", "application/json")
-            .send(data);
+            .send({
+                email : "testuser@abc.com",
+                password : "hashedPassword"
+            });
 
         console.log(response.body);
+
+        //Assert
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty("access_token");
         expect(response.body).toHaveProperty("refresh_token");
@@ -27,15 +44,17 @@ describe('Authentication using username and password', () => {
 
     it('throws error message against incorrect credentials (correct username, incorrect password).', async () => {
 
-        let data = {
-            email: "mohsin.nanosoft@gmail.com",
-            password: "hashedPa22word"
-        };
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
 
+        //Act
         const response = await request(app)
             .post("/auth/token")
             .set("content-type", "application/json")
-            .send(data);
+            .send({
+                email : "testuser@abc.com",
+                password : "hashedPa1230rd"
+            });
 
         console.log(response.body);
         expect(response.status).toBe(400);
@@ -219,23 +238,16 @@ describe('Revoked Tokens', () => {
     it('Successfully marks a valid access_token as revoked.', async () => {
         
         //Arrange        
-        let data = {
-            email: "mohsin.nanosoft@gmail.com",
-            password: "hashedPassword"
-        };
+        let userId = (await dbTestHelper.insertUser("testuser2@abc.com", "hashedPassword")).insertedId.toHexString();
+        let authTokenPair = await testUtils.getAuthTokenPair(userId);
 
-        const accessTokenPairRequest = await request(app)
-            .post("/auth/token")
-            .set("content-type", "application/json")
-            .send(data);
-
-        console.log(accessTokenPairRequest.body);
+        console.log(authTokenPair);
 
         //Act
         const response = await request(app)
             .post("/auth/token/revoke")
             .set("content-type", "application/json")
-            .auth(accessTokenPairRequest.body.access_token, { type: 'bearer' })
+            .auth(authTokenPair.access_token, { type: 'bearer' })
             .send();
 
         console.log(response.body);
@@ -301,27 +313,20 @@ describe('Revoked Tokens', () => {
     });
 
     it('Errors out while revoking an already revoked token', async () => {
+        
+        //Arrange        
+        let userId = (await dbTestHelper.insertUser("testuser2@abc.com", "hashedPassword")).insertedId.toHexString();
+        let authTokenPair = await testUtils.getAuthTokenPair(userId);
 
-        //Arrange             
-        let data = {
-            email: "mohsin.nanosoft@gmail.com",
-            password: "hashedPassword"
-        };
+        console.log(authTokenPair);        
 
-        const accessTokenPairRequest = await request(app)
-            .post("/auth/token")
-            .set("content-type", "application/json")
-            .send(data);
-
-        console.log(accessTokenPairRequest.body);
-
-        await dbTestHelper.insertRevokedToken(accessTokenPairRequest.body.access_token);
+        await dbTestHelper.insertRevokedToken(authTokenPair.access_token);
 
         //Act
         const response = await request(app)
             .post("/auth/token/revoke")
             .set("content-type", "application/json")
-            .auth(accessTokenPairRequest.body.access_token, { type: 'bearer' })
+            .auth(authTokenPair.access_token, { type: 'bearer' })
             .send();
 
         console.log(response.body);
@@ -346,14 +351,14 @@ describe('Revoked Tokens', () => {
 describe('Forgot Password', () => {
 
     beforeEach(() => {
-        return dbTestHelper.initializeDBForForgotPassword().then(()=> {
-            console.log("Forgot Password DB prepared.")
+        return Promise.all(dbTestHelper.clearDatabaseForAuth()).then(() => {
+            console.log("Database prepared for Authentication tests.")
         });
     });
 
     afterEach(() => {        
-        return dbTestHelper.initializeDBForForgotPassword().then(()=> {
-            console.log("Forgot Password DB prepared.")
+        return Promise.all(dbTestHelper.clearDatabaseForAuth()).then(() => {
+            console.log("Database prepared for Authentication tests.")
         });
     });
 
@@ -417,7 +422,7 @@ describe('Forgot Password', () => {
 
     it('Should let a registered user request forgot password.', async () => {
         //Arrange        
-
+        await dbTestHelper.insertUser("mohsin.nanosoft@gmail.com", "hashedPassword");
         //Act
         const response = await request(app)
             .post("/auth/forgotpwd")
@@ -441,6 +446,8 @@ describe('Forgot Password', () => {
 
     it('Should let a user re-request forgot password.', async () => {
         //Arrange        
+        let userOneId = (await dbTestHelper.insertUser("mohsin.nanosoft@gmail.com", "hashedPassword")).insertedId.toHexString();
+        
         await request(app)
             .post("/auth/forgotpwd")
             .set("content-type", "application/json")
@@ -470,7 +477,9 @@ describe('Forgot Password', () => {
     });
 
     it('Should replace the old forgot password request with a new one.', async () => {
-        //Arrange        
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("mohsin.nanosoft@gmail.com", "hashedPassword")).insertedId.toHexString();        
+                
         await request(app)
             .post("/auth/forgotpwd")
             .set("content-type", "application/json")
@@ -480,6 +489,7 @@ describe('Forgot Password', () => {
 
         let oldRequest = await dbTestHelper.findForgotPwdRecordByEmail("mohsin.nanosoft@gmail.com");
         console.log(oldRequest);
+
         //Act
         const response = await request(app)
             .post("/auth/forgotpwd")
@@ -495,5 +505,153 @@ describe('Forgot Password', () => {
         //Assert
         expect(response.status).toBe(200);
         expect(oldRequest).not.toEqual(newRequest);
+    });
+});
+
+describe('Change Known Password', () => {
+    
+    beforeEach(() => {
+        return dbTestHelper.initializeDBForChangePassword().then(() => {
+            console.log("Change Password DB prepared.")
+        });
+    });
+
+    afterEach(() => {
+        return dbTestHelper.initializeDBForChangePassword().then(() => {
+            console.log("Change Password DB prepared.")
+        });
+    });
+
+    it.each
+        (
+            [
+                ["email", "old_password", "n_password"],
+                ["email", "o_password", "new_password"],
+                ["em", "old_password", "new_password"],
+            ]
+        )
+        ('throws validation for invalid request body', async (emailField, oldPasswordField, newPasswordField) => {
+            //Arrange
+            let userId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+            let authTokenPair = await testUtils.getAuthTokenPair(userId);
+
+            let data = {
+                [emailField]: "testuser@abc.com",
+                [oldPasswordField]: "hashedPassword",
+                [newPasswordField]: "asdbsadjkhdjka"
+            }
+
+            //Act
+            const response = await request(app)
+                .put("/auth/password")
+                .set("content-type", "application/json")
+                .auth(authTokenPair.access_token, { type: 'bearer' })
+                .send(data);
+
+            console.log(response.body);
+
+            //Assert
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty("error");
+    });
+
+    it('should not let a user change password of another user', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+        let userTwoId = (await dbTestHelper.insertUser("testuser2@abc.com", "hashedPassword")).insertedId.toHexString();
+        let authTokenPair = await testUtils.getAuthTokenPair(userOneId);
+
+        let data = {
+            email : "testuser2@abc.com",
+            old_password : "hashedPassword",
+            new_password : "newPasswordacv"
+        }
+
+        //Act
+        const response = await request(app)
+            .put("/auth/password")
+            .set("content-type", "application/json")
+            .auth(authTokenPair.access_token, { type: 'bearer' })
+            .send(data);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(403);        
+        expect(response.body)
+            .toStrictEqual
+                (
+                    {
+                        error : {
+                            code : '10-08',
+                            message: "Incorrect email address."
+                        }
+                    }
+                );
+    });
+
+    it('should let a user change their own password given they provide correct existing password', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+        let authTokenPair = await testUtils.getAuthTokenPair(userOneId);
+
+        let data = {
+            email : "testuser@abc.com",
+            old_password : "hashedPassword",
+            new_password : "newPasswordacv"
+        }
+
+        //Act
+        const response = await request(app)
+            .put("/auth/password")
+            .set("content-type", "application/json")
+            .auth(authTokenPair.access_token, { type: 'bearer' })
+            .send(data);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(200);        
+        expect(response.body)
+            .toStrictEqual
+                (
+                    {
+                        message : "Your password has been changed successfully."
+                    }
+                );
+    });
+
+    it('should not let the user set their current password as the new password', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+        let authTokenPair = await testUtils.getAuthTokenPair(userOneId);
+
+        let data = {
+            email : "testuser@abc.com",
+            old_password : "hashedPassword",
+            new_password : "hashedPassword"
+        }
+
+        //Act
+        const response = await request(app)
+            .put("/auth/password")
+            .set("content-type", "application/json")
+            .auth(authTokenPair.access_token, { type: 'bearer' })
+            .send(data);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);        
+        expect(response.body)
+            .toStrictEqual
+                (
+                    {
+                        error : {
+                            code : '10-10',
+                            message: "Please choose a different password than the new one."
+                        }
+                    }
+                );
     });
 });

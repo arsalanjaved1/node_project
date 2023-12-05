@@ -1,16 +1,30 @@
 const { ObjectId } = require('mongodb');
 const client = require('../../helpers/database/mongodb');
+const bcrypt = require('bcrypt');
 const db_name = process.env.DB_NAME;
 
 module.exports = {
     initializeDBForRefreshTokens,
     initializeDBForRevokedTokens,
+    initializeDBForChangePassword,
     insertRefreshTokenRecord,
     deleteRefreshTokenRecordById,
     insertRevokedToken,
     initializeDBForForgotPassword,
-    findForgotPwdRecordByEmail
+    findForgotPwdRecordByEmail,
+    insertUser,
+    clearUsers,
+    clearDatabaseForAuth
 };
+
+function clearDatabaseForAuth() {
+    return [
+        clearUsers(),
+        clearRefreshTokens(),
+        clearRevokedTokens(),
+        initializeDBForForgotPassword()
+    ];
+}
 
 function initializeDBForRefreshTokens() {
     return client.db(db_name)
@@ -25,6 +39,12 @@ function initializeDBForRevokedTokens() {
     ];
 }
 
+function initializeDBForChangePassword() {
+    return client.db(db_name)
+        .collection('users')
+        .deleteMany({});
+}
+
 function insertRefreshTokenRecord(record) {
     return client.db(db_name)
         .collection('refresh_tokens')
@@ -37,7 +57,7 @@ function deleteRefreshTokenRecordById(recordId) {
         .deleteOne
         (
             {
-                _id: ObjectId(recordId)
+                _id: new ObjectId(recordId)
             }
         );
 }
@@ -51,6 +71,12 @@ function clearRefreshTokens() {
 function clearRevokedTokens() {
     return client.db(db_name)
         .collection('revoked_tokens')
+        .deleteMany({});
+}
+
+function clearUsers() {
+    return client.db(db_name)
+        .collection('users')
         .deleteMany({});
 }
 
@@ -82,3 +108,16 @@ function findForgotPwdRecordByEmail(email) {
                 }
             );
 }
+
+async function insertUser(email, password) {
+    return client.db(db_name)
+        .collection('users')
+        .insertOne
+        (
+            {
+                email: email,
+                password : await bcrypt.hash(password, await bcrypt.genSalt(10))
+            }
+        );
+}
+
