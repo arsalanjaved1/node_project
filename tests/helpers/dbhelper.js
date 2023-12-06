@@ -14,7 +14,8 @@ module.exports = {
     findForgotPwdRecordByEmail,
     insertUser,
     clearUsers,
-    clearDatabaseForAuth
+    clearDatabaseForAuth,
+    insertForgotPwdRequest
 };
 
 function clearDatabaseForAuth() {
@@ -121,3 +122,15 @@ async function insertUser(email, password) {
         );
 }
 
+async function insertForgotPwdRequest(record) {
+    return client.db(db_name)
+        .collection('forgotpwd')
+        .insertOne
+        (
+            {
+                email: record.email,
+                token: await bcrypt.hash(record.token, await bcrypt.genSalt(10)),
+                t: new Date()
+            }
+        );
+}

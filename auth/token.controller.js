@@ -12,7 +12,7 @@ router.post('/token/refresh', refreshAccessTokenPair);
 router.post('/token/revoke', revokeAccessTokenPair);
 router.put('/password', changeKnownPassword);
 router.post('/forgotpwd', requestForgotPasswordToken);
-router.post('/forgotpwd/reset', setNewPasswordAfterForgetting);
+router.post('/forgotpwd/reset', _isUserAuthenticated, setNewPasswordAfterForgetting);
 
 module.exports = router; 
 
@@ -130,7 +130,33 @@ async function requestForgotPasswordToken(req, res) {
         );
 }
 
-async function setNewPasswordAfterForgetting(req, res) {
-    throw Error("Method not implemented");    
+async function setNewPasswordAfterForgetting(req, res) {    
+
+    const { error, value } = tokenSchemas.resetForgotPasswordRequestSchema.validate(req.body);
+
+    if (!error) {
+        let result = await tokenService.resetForgotPassword(value);
+
+        if (!result.hasOwnProperty("error")) {
+            return res.status(200).json(result);
+        }
+
+        return res.status(400).json(result);
+    }
+
+    return res.status(400).json({ error: error.message });
 }
 
+function _isUserAuthenticated(req, res, next) {
+    if (req.auth || req.headers.hasOwnProperty('authorization')) {
+        return res.status(409).json
+            (
+                {
+                    action_required : "LOGOUT",
+                    message : "Please logout to continue with password reset."
+                }
+            );
+    }
+
+    next();
+}

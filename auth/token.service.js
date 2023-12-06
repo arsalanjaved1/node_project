@@ -10,7 +10,8 @@ module.exports = {
     refreshAccessTokenPair,
     revokeTokenPair,
     generateForgotPasswordToken,
-    changePassword
+    changePassword,
+    resetForgotPassword
 };
 
 async function authenticate(email, password) {
@@ -120,5 +121,37 @@ async function changePassword(currentUser, changePasswordPayload) {
         message : "Your password has been changed successfully."
     }
 }
+
+async function resetForgotPassword({email, forgot_pwd_token, new_password}) {
+    let { error, user } = await tokenRepository.findUserByEmail(email);
+
+    if (error) {
+        return { error };
+    }
+
+    let { error:forgotPwdError , record } = await tokenRepository.findForgotPwdRequestByEmail(email);
+    
+    if (forgotPwdError) {
+        return {
+            error : forgotPwdError
+        };
+    }
+
+    if (!await bcrypt.compare(forgot_pwd_token, record.token)) {
+        return errorHelper.getErrorByCode('10-12');
+    }
+
+    let newPasswordHash = await bcrypt.hash(new_password, await bcrypt.genSalt(10));
+    let recorded = await tokenRepository.updatePasswordAndDeleteForgotPwdRequest(user._id, newPasswordHash, record._id);
+
+    if (!recorded) {
+        return errorHelper.getErrorByCode('10-09');
+    }
+
+    return {
+        message : "Your password has been reset successfully."
+    }
+}
+
 
 

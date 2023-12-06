@@ -39,6 +39,14 @@ const codeToErrorMap = {
     '10-10' : {        
         real_error : "User's existing password is the same as the new one.",
         friendly_error : "Please choose a different password than the new one."
+    },    
+    '10-11' : {        
+        real_error : "Could not find forogt password request in the database.",
+        friendly_error : "Either the token has expired or it does not exist."
+    },    
+    '10-12' : {        
+        real_error : "Forgot Password token hash does not match with the token provided in the request.",
+        friendly_error : "The token provided is incorrect."
     }
 }
 

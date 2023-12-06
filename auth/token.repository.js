@@ -13,7 +13,10 @@ module.exports = {
     insertRevokedToken,
     insertRevokedTokenAndDeleteOldRefreshToken,
     upsertForgotPwdToken,
-    updateUserPassword
+    updateUserPassword,
+    findForgotPwdRequestByEmail,
+    deleteForgotPwdRequest,
+    updatePasswordAndDeleteForgotPwdRequest
 }
 
 async function findUserByEmail(email) {
@@ -238,7 +241,7 @@ async function upsertForgotPwdToken(email, tokenHash) {
     return result.acknowledged;
 }
 
-async function updateUserPassword(userId, newPasswordHash) {
+async function updateUserPassword(userId, newPasswordHash, queryOptions = {}) {
     let result = await client.db(db_name).collection('users').updateOne(
         {
             _id : userId
@@ -247,8 +250,82 @@ async function updateUserPassword(userId, newPasswordHash) {
             $set: {
                 password : newPasswordHash                
             }
+        },
+        {
+            ... queryOptions
         }
     );
 
     return result.acknowledged;
+}
+
+async function findForgotPwdRequestByEmail(email) {
+    let record = await client.db(db_name)
+        .collection('forgotpwd')
+        .findOne
+        (
+            {
+                email: email
+            }
+        );
+    
+    if (!record) {
+        return errorHelper.getErrorByCode('10-11');
+    }
+
+    return {
+        record : record
+    };
+}
+
+async function deleteForgotPwdRequest(recordId, queryOptions = {}) {
+    let deleteResult = await client.db(db_name)
+        .collection('forgotpwd')
+        .deleteOne
+        (
+            {
+                _id: recordId
+            },
+            {
+                ...queryOptions
+            }
+        );
+
+    return deleteResult.acknowledged;
+}
+
+async function updatePasswordAndDeleteForgotPwdRequest(userId, newPasswordHash, forgotPwdRequestId) {
+    
+    let result;
+    const transactionOptions = {
+        readConcern: { level: 'snapshot' },
+        writeConcern: { w: 'majority' },
+        readPreference: 'primary'
+    };
+
+    const session = client.startSession();
+
+    try {
+        session.startTransaction(transactionOptions);
+
+        result = await updateUserPassword(userId, newPasswordHash, { session })
+            && await deleteForgotPwdRequest(forgotPwdRequestId, { session });
+
+        if (result === false) {
+            throw new Error("The transaction did not achieve desired results.");
+        }   
+
+        await session.commitTransaction();
+        result = true;
+    }
+    catch(err) {
+        result = false;
+        console.log(err);
+        await session.abortTransaction();                
+    }
+    finally {
+        await session.endSession();
+    }
+
+    return result;
 }

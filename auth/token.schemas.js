@@ -66,6 +66,7 @@ module.exports = {
     loginRequestSchema,
     refreshAccessTokenRequest,
     forgotPasswordRequestSchema,
-    resetPasswordRequestSchema
+    resetPasswordRequestSchema,
+    resetForgotPasswordRequestSchema
 }
 

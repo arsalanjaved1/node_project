@@ -655,3 +655,211 @@ describe('Change Known Password', () => {
                 );
     });
 });
+
+describe('Forgot password reset', () => {
+    //post('/forgotpwd/reset')
+
+    beforeEach(() => {
+        return Promise.all(dbTestHelper.clearDatabaseForAuth()).then(() => {
+            console.log("Database prepared for Authentication tests.")
+        });
+    });
+
+    afterEach(() => {        
+        return Promise.all(dbTestHelper.clearDatabaseForAuth()).then(() => {
+            console.log("Database prepared for Authentication tests.")
+        });
+    });
+
+    it('should error out when requested by a loggedin user', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+        let authTokenPair = await testUtils.getAuthTokenPair(userOneId);
+        await dbTestHelper.insertForgotPwdRequest
+            (
+                {
+                    email : "testuser@abc.com",
+                    token : "1234-5678-1234-2312"
+                }
+            );
+        
+        let resetForgotPwdPayload = {
+            email : "testuser@abc.com",
+            forgot_pwd_token : "1234-5678-1234-2312",
+            new_password : "hashedPassw0rd"
+        };
+
+        //Act
+        const response = await request(app)
+            .post('/auth/forgotpwd/reset')
+            .set("content-type", "application/json")
+            .auth(authTokenPair.access_token, { type: 'bearer' })
+            .send(resetForgotPwdPayload);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(409);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    action_required : "LOGOUT",
+                    message : "Please logout to continue with password reset."
+                }
+            );
+    });
+
+    it('should let a registered user reset a forgotten password', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+        
+        await dbTestHelper.insertForgotPwdRequest
+            (
+                {
+                    email : "testuser@abc.com",
+                    token : "1234-5678-1234-2312-2312-2312-231212"
+                }
+            );
+        
+        let resetForgotPwdPayload = {
+            email : "testuser@abc.com",
+            forgot_pwd_token : "1234-5678-1234-2312-2312-2312-231212",
+            new_password : "hashedPassw0rd"
+        };
+
+        //Act
+        const response = await request(app)
+            .post('/auth/forgotpwd/reset')
+            .set("content-type", "application/json")            
+            .send(resetForgotPwdPayload);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(200);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    message : "Your password has been reset successfully."
+                }
+            );
+    });
+
+    it('should not let an unregistered user reset a forgotten password', async () => {
+        //Arrange        
+        let resetForgotPwdPayload = {
+            email : "testuser@abc.com",
+            forgot_pwd_token : "1234-5678-1234-2312-2312-2312-231212",
+            new_password : "hashedPassw0rd"
+        };
+
+        //Act
+        const response = await request(app)
+            .post('/auth/forgotpwd/reset')
+            .set("content-type", "application/json")            
+            .send(resetForgotPwdPayload);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    error : {
+                        code : '10-01',
+                        message : 'Either the username or the password is incorrect.'
+                    }
+                }
+            );
+    });
+    
+    it('should not let a user reset a forgotten password of any other user', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();
+        let userTwoId = (await dbTestHelper.insertUser("testuser2@abc.com", "hashedPassword")).insertedId.toHexString();
+        
+        await dbTestHelper.insertForgotPwdRequest
+            (
+                {
+                    email : "testuser@abc.com",
+                    token : "1234-5678-1234-2312-2312-2312-231212"
+                }
+            );
+        
+        let resetForgotPwdPayload = {
+            email : "testuser2@abc.com",
+            forgot_pwd_token : "1234-5678-1234-2312-2312-2312-231212",
+            new_password : "hashedPassw0rd"
+        };
+
+        //Act
+        const response = await request(app)
+            .post('/auth/forgotpwd/reset')
+            .set("content-type", "application/json")            
+            .send(resetForgotPwdPayload);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    error: {
+                        code: '10-11',
+                        message: 'Either the token has expired or it does not exist.'
+                    }
+                }
+            );
+    });
+
+    it('should not let a user reset a forgotten password using an already used forgot password token', async () => {
+        //Arrange
+        let userOneId = (await dbTestHelper.insertUser("testuser@abc.com", "hashedPassword")).insertedId.toHexString();        
+        
+        await dbTestHelper.insertForgotPwdRequest
+            (
+                {
+                    email : "testuser@abc.com",
+                    token : "1234-5678-1234-2312-2312-2312-231212"
+                }
+            );
+        
+        let resetForgotPwdPayload = {
+            email : "testuser@abc.com",
+            forgot_pwd_token : "1234-5678-1234-2312-2312-2312-231212",
+            new_password : "hashedPassw0rd"
+        };
+
+        await request(app)
+            .post('/auth/forgotpwd/reset')
+            .set("content-type", "application/json")            
+            .send(resetForgotPwdPayload);
+
+        //Act
+        const response = await request(app)
+            .post('/auth/forgotpwd/reset')
+            .set("content-type", "application/json")            
+            .send(resetForgotPwdPayload);
+
+        console.log(response.body);
+
+        //Assert
+        expect(response.status).toBe(400);
+        expect(response.body)
+            .toStrictEqual
+            (
+                {
+                    error: {
+                        code: '10-11',
+                        message: 'Either the token has expired or it does not exist.'
+                    }
+                }
+            );
+    });
+});
