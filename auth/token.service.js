@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const tokenRepository = require('./token.repository');
 const errorHelper = require('../helpers/api-errors');
 const { _generateAccessTokenPair, getJwtTokenFromHeader } = require('../helpers/token-helper');
+const {OAuth2Client} = require('google-auth-library');
+const googleOAuth2Client = new OAuth2Client();
 //const emailHelper = require('../helpers/email');
 
 module.exports = {
@@ -11,7 +13,8 @@ module.exports = {
     revokeTokenPair,
     generateForgotPasswordToken,
     changePassword,
-    resetForgotPassword
+    resetForgotPassword,
+    authenticateWithGoogle
 };
 
 async function authenticate(email, password) {
@@ -153,5 +156,42 @@ async function resetForgotPassword({email, forgot_pwd_token, new_password}) {
     }
 }
 
+async function authenticateWithGoogle(IdToken) {
 
+    let tokenPayload = await verifyGoogleIdToken(IdToken);    
+
+    if(!tokenPayload) {
+        return errorHelper.getErrorByCode('10-13');
+    }
+
+    let { user, error } = await tokenRepository.findUserByEmail(tokenPayload.email);
+
+    if (error) {
+        return {
+            error: {
+                action_required: "REGISTER",
+                message: "Please register to be able to login with your google credentials."
+            }
+        }
+    }
+
+    let accessRefreshPair =  _generateAccessTokenPair(user._id);
+
+    if (!await tokenRepository.insertRefreshToken(user._id, accessRefreshPair)) {
+        return errorHelper.getErrorByCode('10-03');
+    }
+
+    return accessRefreshPair;
+}
+
+//TODO: Add multiple CLIENT_ID for multiple apps
+//audience: [CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+async function verifyGoogleIdToken(IdToken) {
+    const ticket = await googleOAuth2Client.verifyIdToken({
+        idToken: IdToken,
+        audience: process.env.GOOGLE_AUTH_CLIENT_ID
+    });
+
+    return ticket.getPayload();
+}  
 

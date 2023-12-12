@@ -62,11 +62,16 @@ const resetPasswordRequestSchema = Joi.object({
 
 }); 
 
+const exchangeGoogleIdTokenSchema = Joi.object({
+    token: Joi.string().required()
+})
+
 module.exports = {
     loginRequestSchema,
     refreshAccessTokenRequest,
     forgotPasswordRequestSchema,
     resetPasswordRequestSchema,
-    resetForgotPasswordRequestSchema
+    resetForgotPasswordRequestSchema,
+    exchangeGoogleIdTokenSchema
 }
 

@@ -39,7 +39,30 @@ async function createAccessTokenPair(req, res) {
 }
 
 async function exchangeGoogleIdTokenForAccessTokenPair(req, res) {
-    throw Error("Method not implemented");    
+
+    const { error, value } = tokenSchemas.exchangeGoogleIdTokenSchema.validate(req.body);
+
+    if (!error) {
+        let result = await tokenService.authenticateWithGoogle(value.token);
+
+        if (!result.hasOwnProperty("error")) {
+            return res.status(200).json(result);
+        }
+
+        if (result.error.hasOwnProperty("action_required")) {
+            return res.status(409).json(result);
+        } 
+
+        return res.status(400).json(result);
+    }
+
+    return res.status(400)
+        .json
+        (
+            {
+                error: error.message
+            }
+        );
 }
 
 async function exchangeFacebookTokenForAccessTokenPair(req, res) {

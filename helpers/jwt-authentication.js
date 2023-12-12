@@ -17,6 +17,8 @@ function jwtAuthentication() {
                 path:
                     [
                         '/auth/token',
+                        '/auth/token/exchange/google',
+                        '/token/exchange/facebook',
                         '/auth/token/refresh',
                         '/auth/forgotpwd',
                         '/auth/forgotpwd/reset'

@@ -47,6 +47,10 @@ const codeToErrorMap = {
     '10-12' : {        
         real_error : "Forgot Password token hash does not match with the token provided in the request.",
         friendly_error : "The token provided is incorrect."
+    },    
+    '10-13' : {        
+        real_error : "Unable to verify google ID Token.",
+        friendly_error : "We could not authenticate you with Google. Please try again."
     }
 }
 
