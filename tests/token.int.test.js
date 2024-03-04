@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../index");
+const app = require("../app");
 const dbTestHelper = require('./helpers/dbhelper');
 const testUtils = require('./helpers/utils');
 const { ObjectId } = require("mongodb");
