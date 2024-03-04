@@ -3,8 +3,10 @@ A sample with Nodejs REST API Authentication using different authentication sche
 
 ## ENVIRONMENT SETUP
 
-- Nodejs 20.9.0
-- mongodb 7.0.2
+| Software   | Version |
+| :--------: | :-----: |
+| Nodejs     |  20.9.0 |
+| mongodb    |  7.0.2  |
 
 - Run => `docker-compose up -d` to start the development stack
 - Execute `mongosh "mongodb://localhost:27017/"` in the `mongodb` container
