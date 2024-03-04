@@ -17,6 +17,8 @@ A sample with Nodejs REST API Authentication using different authentication sche
 ## Add iat(issued at time) and exp(expiry time)
 
 - Please don't forget to add `iat` and `exp` to `jwt.sign()` method in the `helpers\token-helper.js` file. Failiure to add iat and exp will result in tokens getting authenticated without any time restrictions.
+- ![image](https://github.com/teamcustombranex/nodeauth/assets/148888216/ea09fbf7-523a-43b7-ba75-b1184b8958c1)
+
 
 ## REPOSITORY PUSH RULES
 
