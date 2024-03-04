@@ -14,6 +14,10 @@ A sample with Nodejs REST API Authentication using different authentication sche
 - `mongodb` connection string for **compass** => `mongodb://localhost:27017/?directConnection=true`
 - For connection string to be used inside the `node application`, please see the container name and use => `mongodb://<YOUR_MONGODB_CONTAINER_NAME>:27017/?replicaSet=rs1`
 
+## Add iat(issued at time) and exp(expiry time)
+
+- Please don't forget to add `iat` and `exp` to `jwt.sign()` method in the `helpers\token-helper.js` file. Failiure to add iat and exp will result in tokens getting authenticated without any time restrictions.
+
 ## REPOSITORY PUSH RULES
 
 - Please create a separate branch with your work / fixes / additions
