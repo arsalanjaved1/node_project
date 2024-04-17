@@ -2,7 +2,7 @@ version: '3'
 
 services:
   nodeauth_rest_api:
-    image: "node:20.9.0"
+    image: "node:20.12.2"
     working_dir: /app
     volumes:
       - .:/app

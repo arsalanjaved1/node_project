@@ -5,7 +5,7 @@ A sample with Nodejs REST API Authentication using different authentication sche
 
 | Software   | Version |
 | :--------: | :-----: |
-| Nodejs     |  20.9.0 |
+| Nodejs     | 20.12.2 |
 | mongodb    |  7.0.2  |
 
 - Run => `docker-compose up -d` to start the development stack
@@ -30,5 +30,9 @@ A sample with Nodejs REST API Authentication using different authentication sche
 
 ## For testing
 
-- `docker run --name node-auth-test -it --network nodeauth_default  -p 30001:30001 -w /app -v  "/e/node_mobile_auth/nodeauth:/app" node:20.9.0 sh -c "npm install && npm test"`
+- Just get shell access to the REST API container and run `npm test`
 - Substitute `/e/node_mobile_auth/nodeauth` with your own Filesystem project path
+
+## Cleaning up
+
+- Run `docker-compose down -v`. This will delete the mongodb volume as well.
