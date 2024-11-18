@@ -15,6 +15,35 @@ tags:
   - name: Token
 
 paths:  
+  /user/create:
+    post:
+      tags:
+        - User
+      summary: "To Create a User API"
+      operationId: /user/create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid email or password
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+
   /auth/token:
     post:
       tags:
@@ -280,6 +309,25 @@ paths:
 
 components:
   schemas:        
+    UserCreateRequest:
+      required:
+        - email
+        - password
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user123@yopmail.com
+        password:
+          type: string
+          format: password
+          example: 12345678
+        device_type:
+          type: string
+        device_token:
+          type: string
+
     LoginRequest:
       required:
         - email

@@ -51,6 +51,14 @@ const codeToErrorMap = {
     '10-13' : {        
         real_error : "Unable to verify google ID Token.",
         friendly_error : "We could not authenticate you with Google. Please try again."
+    },
+    '10-14' : {
+        real_error : "There was a problem inserting the user in the database.",
+        friendly_error : "Something went wrong."
+    },
+    '10-1000': {
+        real_error: "Service unavailable. Please try again.",
+        friendly_error: "An error has occurred. Please try again later."
     }
 }
 

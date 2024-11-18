@@ -38,6 +38,8 @@ app.get('/hash', async function (req, res) {
         )
 });
 
+app.use('/user', require('./user/user.controller.js'));
+
 // use JWT auth to secure the api
 app.use(jwtAuthenticate());
 
