@@ -9,7 +9,12 @@ const loginRequestSchema = Joi.object({
     password: Joi.string()
                  .min(8)
                  .max(15)
-                 .required()  
+                 .required(),
+
+    device_type: Joi.string()
+                    .required(),
+    device_token: Joi.string()
+                    .required()
 
 });
 

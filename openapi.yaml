@@ -6,7 +6,7 @@ info:
     email: team.custom.branex@nanosofttek.com
   version: 1.0.0
 servers:
-  - url: "http://localhost:30001"
+  - url: "http://localhost:3000"
     description: Development Server
 
 tags:
@@ -289,9 +289,11 @@ components:
         email:
           type: string
           format: email
+          example: user123@yopmail.com
         password:
           type: string
           format: password
+          example: 12345678
         device_type:
           type: string
         device_token:
