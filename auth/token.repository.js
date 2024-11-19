@@ -16,7 +16,8 @@ module.exports = {
     updateUserPassword,
     findForgotPwdRequestByEmail,
     deleteForgotPwdRequest,
-    updatePasswordAndDeleteForgotPwdRequest
+    updatePasswordAndDeleteForgotPwdRequest,
+    insertAndUpdateDeviceToken
 }
 
 async function findUserByEmail(email) {
@@ -328,4 +329,28 @@ async function updatePasswordAndDeleteForgotPwdRequest(userId, newPasswordHash, 
     }
 
     return result;
+}
+
+async function insertAndUpdateDeviceToken(userId, device_token, device_type, queryOptions = {}) {
+    let result = await client.db(db_name)
+        .collection('device_tokens').updateOne(
+            {
+                device_token: device_token
+            },
+            {
+                $set: {
+                    user: userId,
+                    device_token: device_token,
+                    device_type: device_type,
+                    logged_in: true,
+                    t: new Date()
+                }
+            },
+            {
+                upsert: true,
+                ...queryOptions
+            }
+        );
+
+    return result.acknowledged;
 }

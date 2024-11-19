@@ -4,7 +4,8 @@
   "description": "A sample with Nodejs REST API Authentication using different authentication schemes",
   "main": "index.js",
   "scripts": {
-    "test": "jest --verbose --coverage --watch --testTimeout=50000"
+    "test": "jest --verbose --coverage --watch --testTimeout=50000",
+    "dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
