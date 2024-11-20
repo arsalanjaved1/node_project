@@ -1,5 +1,4 @@
 require('dotenv').config();
-const client = require('./helpers/database/mongodb.js');
 const express = require('express');
 const app = express();
 const cors = require('cors');
