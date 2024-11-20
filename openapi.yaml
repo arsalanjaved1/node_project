@@ -6,7 +6,7 @@ info:
     email: team.custom.branex@nanosofttek.com
   version: 1.0.0
 servers:
-  - url: "http://localhost:3000"
+  - url: "http://localhost:30001"
     description: Development Server
 
 tags:
