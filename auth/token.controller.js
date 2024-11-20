@@ -18,9 +18,10 @@ module.exports = router;
 
 async function createAccessTokenPair(req, res) {
     const { error, value } = tokenSchemas.loginRequestSchema.validate(req.body);
+    const { email, password, device_token, device_type } = value;
 
     if (!error) {
-        let result = await tokenService.authenticate(value.email, value.password);
+        let result = await tokenService.authenticate(email, password, device_token, device_type);
 
         if (result.hasOwnProperty("error")) {
             return res.status(400).json(result);

@@ -56,6 +56,10 @@ const codeToErrorMap = {
         real_error : "There was a problem inserting the user in the database.",
         friendly_error : "Something went wrong."
     },
+    '10-15' : {        
+        real_error : "Could not insert device token in the database.",
+        friendly_error : "Unable to cater your request at the moment. Please try again."
+    },
     '10-1000': {
         real_error: "Service unavailable. Please try again.",
         friendly_error: "An error has occurred. Please try again later."

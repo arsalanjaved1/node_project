@@ -5,6 +5,7 @@ const errorHelper = require('../helpers/api-errors');
 const { _generateAccessTokenPair, getJwtTokenFromHeader } = require('../helpers/token-helper');
 const {OAuth2Client} = require('google-auth-library');
 const googleOAuth2Client = new OAuth2Client();
+const client = require('../helpers/database/mongodb');
 //const emailHelper = require('../helpers/email');
 
 module.exports = {
@@ -17,7 +18,7 @@ module.exports = {
     authenticateWithGoogle
 };
 
-async function authenticate(email, password) {
+async function authenticate(email, password, device_token, device_type) {
 
     let { user, error } = await tokenRepository.findUserByEmail(email);
 
@@ -31,11 +32,31 @@ async function authenticate(email, password) {
 
     let accessRefreshPair =  _generateAccessTokenPair(user._id);
 
-    if (!await tokenRepository.insertRefreshToken(user._id, accessRefreshPair)) {
-        return errorHelper.getErrorByCode('10-03');
-    }
+    // Start a session
+    const session = client.startSession();
 
-    return accessRefreshPair;
+    try {
+        // Start a transaction
+        session.startTransaction();
+
+        if (!await tokenRepository.insertRefreshToken(user._id, accessRefreshPair, {session}))
+            throw new Error('10-03');
+        
+        if (!await tokenRepository.insertAndUpdateDeviceToken(user._id, device_token, device_type, {session}))
+            throw new Error('10-15');
+
+        await session.commitTransaction();
+        return accessRefreshPair;
+    }
+    catch(err) {
+        await session.abortTransaction();
+        return err.message.includes('10-') 
+                    ? errorHelper.getErrorByCode(err.message) 
+                    : errorHelper.getErrorByCode('10-1000');
+    }
+    finally {
+        await session.endSession();
+    }
 }
 
 async function refreshAccessTokenPair(refreshToken) {
