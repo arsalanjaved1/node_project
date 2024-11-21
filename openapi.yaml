@@ -44,6 +44,35 @@ paths:
           description: Unsupported Media Type
           content: {}
 
+  /user/register:
+    post:
+      tags:
+        - User
+      summary: "Register User API"
+      operationId: /user/register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid email or password
+          content: {}
+        "405":
+          description: Method not allowed
+          content: {}
+        "415":
+          description: Unsupported Media Type
+          content: {}
+
   /auth/token:
     post:
       tags:
@@ -311,10 +340,34 @@ components:
   schemas:        
     UserCreateRequest:
       required:
+        - first_name
+        - last_name
+        - dob
         - email
         - password
+        - gender
+        - area
+        - lat
+        - lng
+        - phone_slug
+        - phone_code
+        - phone_number
+        - city_id
+        - nationality_id
+        - device_type
+        - device_token
       type: object
       properties:
+        first_name:
+          type: string
+          example: John
+        last_name:
+          type: string
+          example: Doe
+        dob:
+          type: string
+          format: date
+          example: 2000-12-30
         email:
           type: string
           format: email
@@ -323,6 +376,32 @@ components:
           type: string
           format: password
           example: 12345678
+        gender:
+          type: string
+          example: male
+        area:
+          type: string
+          example: Houston Block D
+        lat:
+          type: string
+          example: 24.9174108
+        lng:
+          type: string
+          example: 67.1035771
+        phone_slug:
+          type: string
+          example: US
+        phone_code:
+          type: string
+          example: "+002"
+        phone_number:
+          type: string
+        city_id:
+          type: string
+          example: 67348b563dde2a314aed4671
+        nationality_id:
+          type: string
+          example: 67348b563dde2a314aed4672
         device_type:
           type: string
         device_token:
@@ -388,6 +467,26 @@ components:
           type: string
         device_token:
           type: string
+    Location:
+      type: object
+      properties:
+        coordinates: 
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 2
+        type: 
+          type: string
+    Phone:
+      type: object
+      properties:
+        slug:
+          type: string
+        code:
+          type: string
+        number:
+          type: string
     UserProfile:
       type: object
       properties:
@@ -395,12 +494,28 @@ components:
           type: string
         last_name:
           type: string
-        phone_code:
+        img:
           type: string
-        phone_slug:
+        dob:
           type: string
-        phone_no:
+          format: date
+        email:
           type: string
+          format: email
+        password:
+          type: string
+        gender:
+          type: string
+        location:
+          $ref: "#/components/schemas/Location"
+        nationality_id:
+          type: string
+        city_id:
+          type: string
+        area:
+          type: string
+        phone:
+          $ref: "#/components/schemas/Phone"
     TokenRefreshRequest:
       type: object
       properties:

@@ -1,4 +1,5 @@
 const userRepository = require('./user.repository');
+const errorHelper = require('../helpers/api-errors');
 const bcrypt = require('bcrypt');
 
 async function createUser(email, password) {
@@ -15,6 +16,24 @@ async function createUser(email, password) {
     };
 }
 
+async function registerUser(user) {
+
+    let existedUser = await userRepository.findUserByEmail(user.email);
+    if (existedUser)
+        return errorHelper.getErrorByCode('10-16');
+
+    user.password = await userRepository.encryptPassword(user.password);
+    let result = await userRepository.createUser(user);
+
+    if (!result)
+        return errorHelper.getErrorByCode('10-14');
+
+    return {
+        result
+    };
+}
+
 module.exports = {
-    createUser
+    createUser,
+    registerUser
 };

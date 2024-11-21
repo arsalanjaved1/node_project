@@ -60,6 +60,10 @@ const codeToErrorMap = {
         real_error : "Could not insert device token in the database.",
         friendly_error : "Unable to cater your request at the moment. Please try again."
     },
+    '10-16' : {
+        real_error : "This email is already exists in the database.",
+        friendly_error : "Unable to register an account, unique email is required."
+    },
     '10-1000': {
         real_error: "Service unavailable. Please try again.",
         friendly_error: "An error has occurred. Please try again later."
